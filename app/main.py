@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
+from app.api import quiz, coding, audit, assessment
 from dotenv import load_dotenv
 import os
 
@@ -25,16 +26,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Register API routers
+app.include_router(assessment.router)
+app.include_router(quiz.router)
+app.include_router(coding.router)
+app.include_router(audit.router)
+
 @app.get("/")
 def read_root():
     return {
         "message": "SkillAssess Pro API is running",
         "version": "1.0.0",
-        "status": "active"
+        "status": "active",
+        "endpoints": {
+            "docs": "/docs",
+            "assessment": "/api/assessment",
+            "quiz": "/api/quiz",
+            "coding": "/api/coding",
+            "audit": "/api/audit"
+        }
     }
 
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
-
-# We'll add API routers here in next phase
