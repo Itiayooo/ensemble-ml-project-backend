@@ -29,8 +29,8 @@ def start_assessment(request: schemas.SessionStartRequest, db: Session = Depends
 
     # Get random question/problem IDs to assign
     quiz_questions = crud.get_random_quiz_questions(db, count=20)
-    coding_problems = crud.get_random_coding_problems(db, count=5)
-    audit_problems = crud.get_random_audit_problems(db, count=5)
+    coding_problems = crud.get_random_coding_problems(db, count=1)
+    audit_problems = crud.get_random_audit_problems(db, count=1)
 
     quiz_ids = [q.id for q in quiz_questions]
     coding_ids = [p.id for p in coding_problems]

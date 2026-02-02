@@ -24,7 +24,7 @@ def get_quiz_question_count(db: Session) -> int:
     """Check how many questions exist"""
     return db.query(models.QuizQuestion).count()
 
-def get_random_quiz_questions(db: Session, count: int = 20) -> list:
+def get_random_quiz_questions(db: Session, count: int = 10) -> list:
     """Fetch N random questions from database"""
     return (
         db.query(models.QuizQuestion)

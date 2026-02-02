@@ -9,7 +9,7 @@ router = APIRouter(prefix="/api/quiz", tags=["Quiz"])
 @router.get("/start/{session_id}", response_model=schemas.QuizStartResponse)
 def start_quiz(session_id: int, db: Session = Depends(get_db)):
     """
-    Fetch 20 random quiz questions for the user.
+    Fetch 10 random quiz questions for the user.
     Does NOT include correct answers (security).
     """
     # Verify session exists
@@ -22,7 +22,7 @@ def start_quiz(session_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Quiz already completed")
 
     # Get random questions
-    questions = crud.get_random_quiz_questions(db, count=20)
+    questions = crud.get_random_quiz_questions(db, count=10)
 
     if not questions:
         raise HTTPException(status_code=500, detail="No quiz questions in database. Run the seed script first.")

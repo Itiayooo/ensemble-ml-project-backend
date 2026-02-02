@@ -11,69 +11,166 @@ router = APIRouter(prefix="/api/coding", tags=["Coding"])
 
 # ==================== CODE EXECUTION ====================
 
+# def execute_python_code(code: str, test_cases: list) -> list:
+#     """
+#     Safely execute Python code against test cases.
+#     Uses subprocess with timeout to prevent infinite loops.
+#     """
+#     results = []
+
+#     for i, test in enumerate(test_cases):
+#         # Build a script that runs user code + test case
+#         test_script = f"""
+# import sys
+# import json
+
+# # User's code
+# {code}
+
+# # Run test
+# try:
+#     input_data = {json.dumps(test['input'])}
+    
+#     # Call the function dynamically
+#     func_name = list(input_data.keys())[0] if isinstance(input_data, dict) else None
+    
+#     # For Two Sum style problems
+#     if 'nums' in input_data and 'target' in input_data:
+#         result = twoSum(input_data['nums'], input_data['target'])
+#     # For generic single-argument problems  
+#     elif len(input_data) == 1:
+#         key = list(input_data.keys())[0]
+#         result = eval(list(globals().keys())[-1])(input_data[key])
+#     else:
+#         result = None
+        
+#     print(json.dumps(result))
+# except Exception as e:
+#     print(json.dumps({{"error": str(e)}}))
+# """
+#         try:
+#             process = subprocess.run(
+#                 ["python", "-c", test_script],
+#                 capture_output=True,
+#                 text=True,
+#                 timeout=5  # 5 second timeout
+#             )
+
+#             if process.returncode == 0:
+#                 actual_output = process.stdout.strip()
+#                 expected = json.dumps(test['expected_output'])
+
+#                 # Compare outputs
+#                 passed = actual_output == expected
+
+#                 results.append({
+#                     "test_case": i + 1,
+#                     "passed": passed,
+#                     "expected": expected,
+#                     "actual": actual_output
+#                 })
+#             else:
+#                 results.append({
+#                     "test_case": i + 1,
+#                     "passed": False,
+#                     "expected": json.dumps(test['expected_output']),
+#                     "actual": f"Error: {process.stderr.strip()}"
+#                 })
+
+#         except subprocess.TimeoutExpired:
+#             results.append({
+#                 "test_case": i + 1,
+#                 "passed": False,
+#                 "expected": json.dumps(test['expected_output']),
+#                 "actual": "Error: Time Limit Exceeded (5s)"
+#             })
+#         except Exception as e:
+#             results.append({
+#                 "test_case": i + 1,
+#                 "passed": False,
+#                 "expected": json.dumps(test['expected_output']),
+#                 "actual": f"Error: {str(e)}"
+#             })
+
+#     return results
+
 def execute_python_code(code: str, test_cases: list) -> list:
     """
     Safely execute Python code against test cases.
-    Uses subprocess with timeout to prevent infinite loops.
     """
     results = []
 
     for i, test in enumerate(test_cases):
-        # Build a script that runs user code + test case
+        # Extract function name from code
+        import re
+        func_match = re.search(r'def (\w+)\(', code)
+        if not func_match:
+            results.append({
+                "test_case": i + 1,
+                "passed": False,
+                "expected": str(test['expected_output']),
+                "actual": "Error: No function found in code"
+            })
+            continue
+        
+        func_name = func_match.group(1)
+        
+        # Build test script
         test_script = f"""
-import sys
 import json
+import sys
 
-# User's code
 {code}
 
-# Run test
 try:
-    input_data = {json.dumps(test['input'])}
+    # Get input data
+    test_input = {test['input']}
     
-    # Call the function dynamically
-    func_name = list(input_data.keys())[0] if isinstance(input_data, dict) else None
+    # Call the function
+    result = {func_name}(**test_input)
     
-    # For Two Sum style problems
-    if 'nums' in input_data and 'target' in input_data:
-        result = twoSum(input_data['nums'], input_data['target'])
-    # For generic single-argument problems  
-    elif len(input_data) == 1:
-        key = list(input_data.keys())[0]
-        result = eval(list(globals().keys())[-1])(input_data[key])
-    else:
-        result = None
-        
+    # Output result as JSON
     print(json.dumps(result))
 except Exception as e:
-    print(json.dumps({{"error": str(e)}}))
+    print(json.dumps({{"error": str(e)}}), file=sys.stderr)
+    sys.exit(1)
 """
+        
         try:
             process = subprocess.run(
                 ["python", "-c", test_script],
                 capture_output=True,
                 text=True,
-                timeout=5  # 5 second timeout
+                timeout=5
             )
 
             if process.returncode == 0:
                 actual_output = process.stdout.strip()
-                expected = json.dumps(test['expected_output'])
-
-                # Compare outputs
-                passed = actual_output == expected
-
-                results.append({
-                    "test_case": i + 1,
-                    "passed": passed,
-                    "expected": expected,
-                    "actual": actual_output
-                })
+                try:
+                    actual = json.loads(actual_output)
+                    expected = test['expected_output']
+                    
+                    # Compare (handle different types)
+                    passed = actual == expected
+                    
+                    results.append({
+                        "test_case": i + 1,
+                        "passed": passed,
+                        "expected": str(expected),
+                        "actual": str(actual)
+                    })
+                except json.JSONDecodeError:
+                    results.append({
+                        "test_case": i + 1,
+                        "passed": False,
+                        "expected": str(test['expected_output']),
+                        "actual": f"Invalid output: {actual_output}"
+                    })
             else:
                 results.append({
                     "test_case": i + 1,
                     "passed": False,
-                    "expected": json.dumps(test['expected_output']),
+                    "expected": str(test['expected_output']),
                     "actual": f"Error: {process.stderr.strip()}"
                 })
 
@@ -81,19 +178,18 @@ except Exception as e:
             results.append({
                 "test_case": i + 1,
                 "passed": False,
-                "expected": json.dumps(test['expected_output']),
+                "expected": str(test['expected_output']),
                 "actual": "Error: Time Limit Exceeded (5s)"
             })
         except Exception as e:
             results.append({
                 "test_case": i + 1,
                 "passed": False,
-                "expected": json.dumps(test['expected_output']),
+                "expected": str(test['expected_output']),
                 "actual": f"Error: {str(e)}"
             })
 
     return results
-
 
 def extract_code_metrics(code: str) -> dict:
     """Extract code metrics using radon library"""
@@ -140,7 +236,7 @@ def extract_code_metrics(code: str) -> dict:
 
 @router.get("/start/{session_id}", response_model=schemas.CodingStartResponse)
 def start_coding(session_id: int, db: Session = Depends(get_db)):
-    """Fetch 5 random coding problems"""
+    """Fetch 1 random coding problem"""
     session = crud.get_session_by_id(db, session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -151,7 +247,7 @@ def start_coding(session_id: int, db: Session = Depends(get_db)):
     if session.coding_completed:
         raise HTTPException(status_code=400, detail="Coding stage already completed")
 
-    problems = crud.get_random_coding_problems(db, count=5)
+    problems = crud.get_random_coding_problems(db, count=1)
 
     if not problems:
         raise HTTPException(status_code=500, detail="No coding problems in database. Run the seed script first.")
