@@ -1,3 +1,4 @@
+import random 
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app import models, schemas
@@ -24,14 +25,20 @@ def get_quiz_question_count(db: Session) -> int:
     """Check how many questions exist"""
     return db.query(models.QuizQuestion).count()
 
+# def get_random_quiz_questions(db: Session, count: int = 10) -> list:
+#     """Fetch N random questions from database"""
+#     return (
+#         db.query(models.QuizQuestion)
+#         .order_by(func.random())_
+#         .limit(count)
+#         .all()
+#     )
+
 def get_random_quiz_questions(db: Session, count: int = 10) -> list:
     """Fetch N random questions from database"""
-    return (
-        db.query(models.QuizQuestion)
-        .order_by(func.random())
-        .limit(count)
-        .all()
-    )
+    all_questions = db.query(models.QuizQuestion).all()
+    random.shuffle(all_questions)  # ← This fixes it
+    return all_questions[:count]
 
 def get_quiz_question_by_id(db: Session, question_id: int):
     """Fetch a single question by ID"""
@@ -92,14 +99,20 @@ def seed_coding_problem(db: Session, problem: schemas.CodingProblemCreate):
 def get_coding_problem_count(db: Session) -> int:
     return db.query(models.CodingProblem).count()
 
+# def get_random_coding_problems(db: Session, count: int = 5) -> list:
+#     """Fetch N random coding problems"""
+#     return (
+#         db.query(models.CodingProblem)
+#         .order_by(func.random())
+#         .limit(count)
+#         .all()
+#     )
+
 def get_random_coding_problems(db: Session, count: int = 5) -> list:
     """Fetch N random coding problems"""
-    return (
-        db.query(models.CodingProblem)
-        .order_by(func.random())
-        .limit(count)
-        .all()
-    )
+    all_problems = db.query(models.CodingProblem).all()
+    random.shuffle(all_problems)
+    return all_problems[:count]
 
 def get_coding_problem_by_id(db: Session, problem_id: int):
     return db.query(models.CodingProblem).filter(models.CodingProblem.id == problem_id).first()
@@ -148,14 +161,20 @@ def seed_audit_problem(db: Session, problem: schemas.AuditProblemCreate):
 def get_audit_problem_count(db: Session) -> int:
     return db.query(models.AuditProblem).count()
 
+# def get_random_audit_problems(db: Session, count: int = 5) -> list:
+#     """Fetch N random audit problems"""
+#     return (
+#         db.query(models.AuditProblem)
+#         .order_by(func.random())
+#         .limit(count)
+#         .all()
+#     )
+
 def get_random_audit_problems(db: Session, count: int = 5) -> list:
     """Fetch N random audit problems"""
-    return (
-        db.query(models.AuditProblem)
-        .order_by(func.random())
-        .limit(count)
-        .all()
-    )
+    all_problems = db.query(models.AuditProblem).all()
+    random.shuffle(all_problems)
+    return all_problems[:count]
 
 def get_audit_problem_by_id(db: Session, problem_id: int):
     return db.query(models.AuditProblem).filter(models.AuditProblem.id == problem_id).first()
