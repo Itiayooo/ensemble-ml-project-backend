@@ -97,42 +97,47 @@ router = APIRouter(prefix="/api/coding", tags=["Coding"])
 def execute_python_code(code: str, test_cases: list) -> list:
     """
     Safely execute Python code against test cases.
+    Uses subprocess with timeout to prevent infinite loops.
     """
     results = []
 
-    for i, test in enumerate(test_cases):
-        # Extract function name from code
-        import re
-        func_match = re.search(r'def (\w+)\(', code)
-        if not func_match:
-            results.append({
-                "test_case": i + 1,
-                "passed": False,
-                "expected": str(test['expected_output']),
-                "actual": "Error: No function found in code"
-            })
-            continue
-        
-        func_name = func_match.group(1)
-        
-        # Build test script
-        test_script = f"""
-import json
-import sys
+    # Extract function name from code
+    import re
+    func_match = re.search(r'def (\w+)\(', code)
+    if not func_match:
+        return [{
+            "test_case": 1,
+            "passed": False,
+            "expected": "",
+            "actual": "Error: No function definition found in code"
+        }]
+    
+    func_name = func_match.group(1)
 
+    for i, test in enumerate(test_cases):
+        # Build a script that runs user code + test case
+        test_script = f"""
+import sys
+import json
+
+# User's code
 {code}
 
 try:
-    # Get input data
-    test_input = {test['input']}
+    # Get test input
+    test_input = {repr(test['input'])}
     
-    # Call the function
+    # Call function with unpacked arguments
     result = {func_name}(**test_input)
     
-    # Output result as JSON
+    # Print result as JSON
     print(json.dumps(result))
+    
 except Exception as e:
+    # Print error to stderr
+    import traceback
     print(json.dumps({{"error": str(e)}}), file=sys.stderr)
+    traceback.print_exc(file=sys.stderr)
     sys.exit(1)
 """
         
@@ -141,37 +146,34 @@ except Exception as e:
                 ["python", "-c", test_script],
                 capture_output=True,
                 text=True,
-                timeout=5
+                timeout=5  # 5 second timeout
             )
 
             if process.returncode == 0:
                 actual_output = process.stdout.strip()
                 try:
                     actual = json.loads(actual_output)
-                    expected = test['expected_output']
-                    
-                    # Compare (handle different types)
-                    passed = actual == expected
-                    
-                    results.append({
-                        "test_case": i + 1,
-                        "passed": passed,
-                        "expected": str(expected),
-                        "actual": str(actual)
-                    })
                 except json.JSONDecodeError:
-                    results.append({
-                        "test_case": i + 1,
-                        "passed": False,
-                        "expected": str(test['expected_output']),
-                        "actual": f"Invalid output: {actual_output}"
-                    })
+                    actual = actual_output
+                
+                expected = test['expected_output']
+                
+                # Compare outputs (handle lists/dicts)
+                passed = (actual == expected)
+
+                results.append({
+                    "test_case": i + 1,
+                    "passed": passed,
+                    "expected": str(expected),
+                    "actual": str(actual)
+                })
             else:
+                error_output = process.stderr.strip()
                 results.append({
                     "test_case": i + 1,
                     "passed": False,
                     "expected": str(test['expected_output']),
-                    "actual": f"Error: {process.stderr.strip()}"
+                    "actual": f"Error: {error_output.split('Error:')[-1].strip() if 'Error:' in error_output else error_output[:100]}"
                 })
 
         except subprocess.TimeoutExpired:
