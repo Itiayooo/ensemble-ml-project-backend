@@ -12,38 +12,61 @@ router = APIRouter(prefix="/api/audit", tags=["Audit"])
 
 def analyze_audit(original_code: str, modified_code: str, known_issues: list) -> dict:
     """
-    Compare original buggy code with the modified code.
-    Detect which bugs the student fixed.
+    Improved bug detection - checks if code actually got better.
     """
     bugs_fixed = 0
     bug_details = []
 
+    # Get the actual differences
+    orig_lines = original_code.split('\n')
+    mod_lines = modified_code.split('\n')
+    
     for issue in known_issues:
         fixed = False
         issue_type = issue.get("type", "")
-        severity = issue.get("severity", "")
-
-        # Check for efficiency fix (sqrt optimization)
-        if issue_type == "efficiency":
-            if any(keyword in modified_code for keyword in ["sqrt", "**0.5", "** 0.5", "Math.sqrt"]):
-                fixed = True
-
-        # Check for off-by-one fix (range includes limit)
-        elif issue_type == "logic":
-            if "limit + 1" in modified_code or "limit+1" in modified_code:
-                fixed = True
-
-        # Check for input validation
-        elif issue_type == "validation":
-            if any(keyword in modified_code for keyword in ["< 0", "<0", "negative", "ValueError"]):
-                fixed = True
+        line_range = issue.get("line_range", [])
+        
+        # If there's a line range, check if those lines were modified
+        if line_range and len(line_range) == 2:
+            start, end = line_range
+            start -= 1  # Convert to 0-indexed
+            end = min(end, len(orig_lines))
+            
+            # Check if any of those lines changed
+            for i in range(start, end):
+                if i < len(mod_lines) and i < len(orig_lines):
+                    if orig_lines[i].strip() != mod_lines[i].strip():
+                        # Line was changed - likely fixed
+                        fixed = True
+                        break
+        
+        # Additional type-specific checks
+        if not fixed:
+            if issue_type == "efficiency":
+                # Check for sqrt optimization
+                has_sqrt = "sqrt" in modified_code or "**0.5" in modified_code
+                no_range_n = "range(2, n)" not in modified_code
+                if has_sqrt and no_range_n:
+                    fixed = True
+                    
+            elif issue_type == "logic":
+                # Check for off-by-one fixes
+                if "limit + 1" in modified_code or "limit+1" in modified_code:
+                    fixed = True
+                    
+            elif issue_type == "validation":
+                # Check for new validation
+                orig_ifs = original_code.count("if ")
+                mod_ifs = modified_code.count("if ")
+                if mod_ifs > orig_ifs:
+                    fixed = True
 
         if fixed:
             bugs_fixed += 1
 
         bug_details.append({
             "issue_type": issue_type,
-            "severity": severity,
+            "severity": issue.get("severity", ""),
             "fixed": fixed,
             "description": issue.get("description", "")
         })
@@ -54,28 +77,70 @@ def analyze_audit(original_code: str, modified_code: str, known_issues: list) ->
         "bug_details": bug_details
     }
 
+# def run_audit_tests(modified_code: str, test_cases: list) -> dict:
+#     """Run test cases against modified code"""
+#     passed = 0
+#     total = len(test_cases)
+
+#     for test in test_cases:
+#         test_script = f"""
+# import math
+
+# {modified_code}
+
+# try:
+#     result = is_prime({json.dumps(test['input'])})
+#     expected = {json.dumps(test['expected'])}
+#     if result == expected:
+#         print("PASS")
+#     else:
+#         print("FAIL")
+# except Exception as e:
+#     print(f"ERROR: {{e}}")
+# """
+#         try:
+#             process = subprocess.run(
+#                 ["python", "-c", test_script],
+#                 capture_output=True,
+#                 text=True,
+#                 timeout=5
+#             )
+#             if process.stdout.strip() == "PASS":
+#                 passed += 1
+#         except (subprocess.TimeoutExpired, Exception):
+#             continue
+
+#     return {"passed": passed, "total": total}
 
 def run_audit_tests(modified_code: str, test_cases: list) -> dict:
     """Run test cases against modified code"""
     passed = 0
     total = len(test_cases)
+    failed_tests = []
 
-    for test in test_cases:
+    for idx, test in enumerate(test_cases):
+        # Build a complete test script
         test_script = f"""
 import math
+import sys
 
 {modified_code}
 
 try:
-    result = is_prime({json.dumps(test['input'])})
-    expected = {json.dumps(test['expected'])}
+    result = is_prime({test['input']})
+    expected = {test['expected']}
+    
     if result == expected:
         print("PASS")
+        sys.exit(0)
     else:
-        print("FAIL")
+        print(f"FAIL: Expected {{expected}}, got {{result}}")
+        sys.exit(1)
 except Exception as e:
-    print(f"ERROR: {{e}}")
+    print(f"ERROR: {{str(e)}}")
+    sys.exit(2)
 """
+        
         try:
             process = subprocess.run(
                 ["python", "-c", test_script],
@@ -83,13 +148,37 @@ except Exception as e:
                 text=True,
                 timeout=5
             )
-            if process.stdout.strip() == "PASS":
+            
+            output = process.stdout.strip()
+            
+            if output == "PASS":
                 passed += 1
-        except (subprocess.TimeoutExpired, Exception):
-            continue
+            else:
+                failed_tests.append({
+                    "test": idx + 1,
+                    "input": test['input'],
+                    "expected": test['expected'],
+                    "output": output
+                })
+                
+        except subprocess.TimeoutExpired:
+            failed_tests.append({
+                "test": idx + 1,
+                "input": test['input'],
+                "error": "Timeout"
+            })
+        except Exception as e:
+            failed_tests.append({
+                "test": idx + 1,
+                "input": test['input'],
+                "error": str(e)
+            })
 
-    return {"passed": passed, "total": total}
-
+    return {
+        "passed": passed,
+        "total": total,
+        "failed_tests": failed_tests
+    }
 
 # def calculate_edit_metrics(original: str, modified: str, edit_count: int) -> float:
 #     """

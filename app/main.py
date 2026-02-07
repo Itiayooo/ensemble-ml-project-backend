@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-from app.api import quiz, coding, audit, assessment
+from app.api import quiz, coding, audit, assessment, results
 from dotenv import load_dotenv
 import os
 
@@ -31,6 +31,7 @@ app.include_router(assessment.router)
 app.include_router(quiz.router)
 app.include_router(coding.router)
 app.include_router(audit.router)
+app.include_router(results.router)
 
 @app.get("/")
 def read_root():
@@ -50,3 +51,7 @@ def read_root():
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
+@app.get("/ping")
+def ping():
+    return {"status": "ok"}
