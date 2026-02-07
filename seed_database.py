@@ -314,134 +314,66 @@ def seed_coding_problems(db):
 def seed_audit_problems(db):
     """Seed 20 audit problems with REAL bugs"""
     problems = [
-        # Problem 1
+        # EASY (5 problems)
         {
-            "title": "Prime Number Checker",
-            "description": "Fix the inefficient and buggy prime number checker.",
-            "difficulty": "medium",
-            "buggy_code_python": '''def is_prime(n):
-    """Check if number is prime"""
-    if n <= 1:
-        return False
-    
-    # Bug: Inefficient - checking all numbers up to n
-    for i in range(2, n):
-        if n % i == 0:
-            return False
-    
-    return True''',
-            "known_issues": [
-                {"type": "efficiency", "severity": "high", "description": "Should only check up to sqrt(n)", "line_range": [6, 9]},
-                {"type": "validation", "severity": "low", "description": "No check for negative numbers", "line_range": [3, 4]}
-            ],
-            "test_cases": [
-                {"input": 17, "expected": True},
-                {"input": 20, "expected": False},
-                {"input": 2, "expected": True}
-            ]
-        },
-        
-        # Problem 2
-        {
-            "title": "Factorial Calculator",
-            "description": "Fix bugs in factorial function.",
+            "title": "Factorial Bug",
+            "description": "This function calculates factorial but has an off-by-one error. Find and fix it.",
             "difficulty": "easy",
             "buggy_code_python": '''def factorial(n):
-    """Calculate factorial"""
+    """Calculate factorial of n"""
+    if n <= 0:
+        return 1
     result = 1
-    for i in range(1, n):  # Bug: Should be range(1, n+1)
+    for i in range(1, n):  
         result *= i
-    return result''',
+    return result
+
+# Test
+print(factorial(5))  # Should be 120''',
             "known_issues": [
-                {"type": "logic", "severity": "high", "description": "Range should be (1, n+1)", "line_range": [4, 4]},
-                {"type": "validation", "severity": "medium", "description": "No validation for negative input", "line_range": [2, 3]}
+                {"type": "logic", "severity": "high", "description": "Range excludes n itself", "line_range": [5, 5]}
             ],
             "test_cases": [
                 {"input": 5, "expected": 120},
-                {"input": 0, "expected": 1},
-                {"input": 3, "expected": 6}
+                {"input": 3, "expected": 6},
+                {"input": 0, "expected": 1}
             ]
         },
-        
-        # Problem 3
         {
-            "title": "Sum of Array",
-            "description": "Fix the array sum function.",
+            "title": "List Average Bug",
+            "description": "This function calculates average but crashes on empty lists. Add proper error handling.",
             "difficulty": "easy",
-            "buggy_code_python": '''def array_sum(arr):
-    """Sum all elements in array"""
-    total = 0
-    for i in range(len(arr) - 1):  # Bug: Missing last element
-        total += arr[i]
-    return total''',
+            "buggy_code_python": '''def calculate_average(numbers):
+    """Calculate average of numbers"""
+    total = sum(numbers)
+    return total / len(numbers)  
+
+# Test
+print(calculate_average([10, 20, 30]))''',
             "known_issues": [
-                {"type": "logic", "severity": "high", "description": "Loop stops before last element", "line_range": [4, 4]}
+                {"type": "validation", "severity": "high", "description": "No check for empty list", "line_range": [3, 4]}
             ],
             "test_cases": [
-                {"input": [1,2,3,4,5], "expected": 15},
-                {"input": [10], "expected": 10},
-                {"input": [1,2], "expected": 3}
+                {"input": [10, 20, 30], "expected": 20.0},
+                {"input": [5], "expected": 5.0},
+                {"input": [], "expected": 0}
             ]
         },
-        
-        # Problem 4
         {
-            "title": "Find Maximum",
-            "description": "Fix the max finder.",
-            "difficulty": "easy",
-            "buggy_code_python": '''def find_max(nums):
-    """Find maximum number"""
-    max_val = 0  # Bug: Wrong initialization
-    for num in nums:
-        if num > max_val:
-            max_val = num
-    return max_val''',
-            "known_issues": [
-                {"type": "logic", "severity": "high", "description": "Should initialize with nums[0] or float('-inf')", "line_range": [3, 3]}
-            ],
-            "test_cases": [
-                {"input": [3,1,4,1,5], "expected": 5},
-                {"input": [-5,-2,-8], "expected": -2},
-                {"input": [10], "expected": 10}
-            ]
-        },
-        
-        # Problem 5
-        {
-            "title": "Count Vowels",
-            "description": "Fix the vowel counter.",
-            "difficulty": "easy",
-            "buggy_code_python": '''def count_vowels(s):
-    """Count vowels in string"""
-    vowels = "aeiou"
-    count = 0
-    for char in s:
-        if char in vowels:  # Bug: Not handling uppercase
-            count += 1
-    return count''',
-            "known_issues": [
-                {"type": "logic", "severity": "medium", "description": "Doesn't count uppercase vowels", "line_range": [6, 6]}
-            ],
-            "test_cases": [
-                {"input": "Hello World", "expected": 3},
-                {"input": "AEIOU", "expected": 5},
-                {"input": "xyz", "expected": 0}
-            ]
-        },
-        
-        # Problem 6
-        {
-            "title": "Reverse String",
-            "description": "Fix string reversal.",
+            "title": "String Reversal Bug",
+            "description": "This function should reverse a string but has incorrect indexing.",
             "difficulty": "easy",
             "buggy_code_python": '''def reverse_string(s):
     """Reverse a string"""
     result = ""
-    for i in range(len(s)):  # Bug: Not reversing
+    for i in range(len(s)):  
         result += s[i]
-    return result''',
+    return result
+
+# Test
+print(reverse_string("hello"))  # Should be "olleh"''',
             "known_issues": [
-                {"type": "logic", "severity": "high", "description": "Loop should iterate backwards", "line_range": [4, 5]}
+                {"type": "logic", "severity": "high", "description": "Iterates forward instead of backward", "line_range": [4, 5]}
             ],
             "test_cases": [
                 {"input": "hello", "expected": "olleh"},
@@ -449,209 +381,450 @@ def seed_audit_problems(db):
                 {"input": "a", "expected": "a"}
             ]
         },
-        
-        # Problem 7
         {
-            "title": "Is Even",
-            "description": "Fix the even number checker.",
+            "title": "Max Finder Bug",
+            "description": "This function finds maximum but fails on negative numbers.",
             "difficulty": "easy",
-            "buggy_code_python": '''def is_even(n):
-    """Check if number is even"""
-    if n % 2 == 1:  # Bug: Logic inverted
-        return True
-    return False''',
+            "buggy_code_python": '''def find_max(numbers):
+    """Find maximum number in list"""
+    max_num = 0  
+    for num in numbers:
+        if num > max_num:
+            max_num = num
+    return max_num
+
+# Test
+print(find_max([3, 7, 2, 9]))''',
             "known_issues": [
-                {"type": "logic", "severity": "high", "description": "Returns True for odd numbers", "line_range": [3, 4]}
+                {"type": "logic", "severity": "high", "description": "Incorrect initialization - fails on all-negative lists", "line_range": [3, 3]}
             ],
             "test_cases": [
-                {"input": 4, "expected": True},
-                {"input": 7, "expected": False},
-                {"input": 0, "expected": True}
+                {"input": [3, 7, 2, 9], "expected": 9},
+                {"input": [-5, -1, -10], "expected": -1},
+                {"input": [100], "expected": 100}
             ]
         },
-        
-        # Problem 8
         {
-            "title": "Contains Element",
-            "description": "Fix the search function.",
+            "title": "Duplicate Counter Bug",
+            "description": "This function counts duplicates but has a logic error.",
             "difficulty": "easy",
-            "buggy_code_python": '''def contains(arr, target):
-    """Check if array contains target"""
-    for i in range(len(arr)):
-        if arr[i] == target:
-            return False  # Bug: Should return True
-    return False''',
+            "buggy_code_python": '''def count_duplicates(arr):
+    """Count duplicate elements"""
+    seen = set()
+    duplicates = 0
+    for item in arr:
+        if item in seen:
+            duplicates += 1
+        seen.add(item)  
+    return duplicates
+
+# Test
+print(count_duplicates([1, 2, 2, 3, 3, 3]))''',
             "known_issues": [
-                {"type": "logic", "severity": "high", "description": "Returns False when found", "line_range": [5, 5]}
+                {"type": "logic", "severity": "medium", "description": "Adds to set after checking, causing off-by-one", "line_range": [6, 8]}
             ],
             "test_cases": [
-                {"input": {"arr": [1,2,3], "target": 2}, "expected": True},
-                {"input": {"arr": [1,2,3], "target": 5}, "expected": False}
+                {"input": [1, 2, 2, 3, 3, 3], "expected": 3},
+                {"input": [1, 1, 1], "expected": 2},
+                {"input": [1, 2, 3], "expected": 0}
             ]
         },
-        
-        # Problem 9
+
+        # MEDIUM (5 problems)
         {
-            "title": "Absolute Value",
-            "description": "Fix absolute value function.",
-            "difficulty": "easy",
-            "buggy_code_python": '''def absolute(n):
-    """Return absolute value"""
-    if n < 0:
-        return n  # Bug: Should return -n
-    return n''',
+            "title": "Inefficient Prime Checker",
+            "description": "This prime checker works but is extremely slow. Optimize it to check only up to sqrt(n).",
+            "difficulty": "medium",
+            "buggy_code_python": '''def is_prime(n):
+    """Check if n is prime"""
+    if n < 2:
+        return False
+    for i in range(2, n):  
+        if n % i == 0:
+            return False
+    return True
+
+# Test
+print(is_prime(17))''',
             "known_issues": [
-                {"type": "logic", "severity": "high", "description": "Doesn't negate negative numbers", "line_range": [4, 4]}
+                {"type": "efficiency", "severity": "high", "description": "Checks all numbers up to n instead of sqrt(n)", "line_range": [5, 5]}
             ],
             "test_cases": [
-                {"input": -5, "expected": 5},
-                {"input": 5, "expected": 5},
-                {"input": 0, "expected": 0}
+                {"input": 17, "expected": True},
+                {"input": 20, "expected": False},
+                {"input": 2, "expected": True}
             ]
         },
-        
-        # Problem 10
         {
-            "title": "First Element",
-            "description": "Fix the first element getter.",
-            "difficulty": "easy",
-            "buggy_code_python": '''def get_first(arr):
-    """Get first element"""
-    if len(arr) > 0:
-        return arr[1]  # Bug: Should be arr[0]
-    return None''',
+            "title": "Binary Search Bug",
+            "description": "This binary search has a subtle overflow bug in the midpoint calculation.",
+            "difficulty": "medium",
+            "buggy_code_python": '''def binary_search(arr, target):
+    """Binary search for target in sorted array"""
+    left, right = 0, len(arr) - 1
+    while left <= right:
+        mid = (left + right) // 2  
+        if arr[mid] == target:
+            return mid
+        elif arr[mid] < target:
+            left = mid + 1
+        else:
+            right = mid - 1
+    return -1
+
+# Test
+print(binary_search([1, 3, 5, 7, 9], 5))''',
             "known_issues": [
-                {"type": "logic", "severity": "high", "description": "Returns second element instead of first", "line_range": [4, 4]}
+                {"type": "efficiency", "severity": "medium", "description": "Potential integer overflow, should use left + (right-left)//2", "line_range": [5, 5]}
             ],
             "test_cases": [
-                {"input": [10,20,30], "expected": 10},
-                {"input": [5], "expected": 5}
+                {"input": {"arr": [1, 3, 5, 7, 9], "target": 5}, "expected": 2},
+                {"input": {"arr": [1, 3, 5, 7, 9], "target": 1}, "expected": 0},
+                {"input": {"arr": [1, 3, 5, 7, 9], "target": 10}, "expected": -1}
             ]
         },
-        
-        # Problems 11-20: Add more variety
         {
-            "title": "String Length",
-            "description": "Fix length calculator.",
-            "difficulty": "easy",
-            "buggy_code_python": '''def string_length(s):
-    """Count string length"""
-    count = 1  # Bug: Should start at 0
-    for char in s:
-        count += 1
-    return count''',
-            "known_issues": [
-                {"type": "logic", "severity": "medium", "description": "Counter starts at 1 instead of 0", "line_range": [3, 3]}
-            ],
-            "test_cases": [
-                {"input": "hello", "expected": 5},
-                {"input": "", "expected": 0},
-                {"input": "a", "expected": 1}
-            ]
-        },
-        
-        {
-            "title": "Is Positive",
-            "description": "Fix positive number checker.",
-            "difficulty": "easy",
-            "buggy_code_python": '''def is_positive(n):
-    """Check if positive"""
-    if n >= 0:  # Bug: 0 is not positive
-        return True
-    return False''',
-            "known_issues": [
-                {"type": "logic", "severity": "medium", "description": "Treats 0 as positive", "line_range": [3, 3]}
-            ],
-            "test_cases": [
-                {"input": 5, "expected": True},
-                {"input": -3, "expected": False},
-                {"input": 0, "expected": False}
-            ]
-        },
-        
-        {
-            "title": "Double Values",
-            "description": "Fix array doubler.",
-            "difficulty": "easy",
-            "buggy_code_python": '''def double_array(arr):
-    """Double all values"""
-    for i in range(len(arr)):
-        arr[i] = arr[i] + 2  # Bug: Should multiply by 2
-    return arr''',
-            "known_issues": [
-                {"type": "logic", "severity": "high", "description": "Adds 2 instead of multiplying by 2", "line_range": [4, 4]}
-            ],
-            "test_cases": [
-                {"input": [1,2,3], "expected": [2,4,6]},
-                {"input": [0,5], "expected": [0,10]}
-            ]
-        },
-        
-        {
-            "title": "Last Element",
-            "description": "Fix last element getter.",
-            "difficulty": "easy",
-            "buggy_code_python": '''def get_last(arr):
-    """Get last element"""
-    if len(arr) > 0:
-        return arr[len(arr)]  # Bug: Index out of bounds
-    return None''',
-            "known_issues": [
-                {"type": "logic", "severity": "high", "description": "Index should be len(arr)-1", "line_range": [4, 4]}
-            ],
-            "test_cases": [
-                {"input": [1,2,3], "expected": 3},
-                {"input": [10], "expected": 10}
-            ]
-        },
-        
-        # Add more problems to reach 20...
-        {
-            "title": "Count Negatives",
-            "description": "Fix negative counter.",
-            "difficulty": "easy",
-            "buggy_code_python": '''def count_negatives(arr):
-    """Count negative numbers"""
-    count = 0
-    for num in arr:
-        if num > 0:  # Bug: Should be < 0
-            count += 1
-    return count''',
-            "known_issues": [
-                {"type": "logic", "severity": "high", "description": "Counts positives instead of negatives", "line_range": [5, 5]}
-            ],
-            "test_cases": [
-                {"input": [-1,-2,3,4], "expected": 2},
-                {"input": [1,2,3], "expected": 0}
-            ]
-        },
-    ]
+            "title": "Palindrome Checker Bug",
+            "description": "This palindrome checker fails on strings with mixed case and spaces.",
+            "difficulty": "medium",
+            "buggy_code_python": '''def is_palindrome(s):
+    """Check if string is palindrome"""
     
-    # Add 5 more to reach 20 total (continue pattern above)
-    for i in range(15, 20):
-        problems.append({
-            "title": f"Debug Challenge {i+1}",
-            "description": "Fix the logical error in this function.",
-            "difficulty": "easy",
-            "buggy_code_python": f'''def function_{i+1}(x):
-    """Sample function"""
-    if x == 0:
-        return 0
-    return x + 1  # Returns correct value
-''',
+    return s == s[::-1]
+
+# Test
+print(is_palindrome("racecar"))  # True
+print(is_palindrome("A man a plan a canal Panama"))  # Should be True''',
             "known_issues": [
-                {"type": "logic", "severity": "low", "description": "No actual bug - code works", "line_range": [5, 5]}
+                {"type": "validation", "severity": "medium", "description": "Doesn't normalize case or remove spaces", "line_range": [3, 4]}
             ],
             "test_cases": [
-                {"input": 5, "expected": 6},
-                {"input": 0, "expected": 0}
+                {"input": "racecar", "expected": True},
+                {"input": "A man a plan a canal Panama", "expected": True},
+                {"input": "hello", "expected": False}
             ]
-        })
+        },
+        {
+            "title": "Merge Sort Bug",
+            "description": "This merge sort has an index error in the merge step.",
+            "difficulty": "medium",
+            "buggy_code_python": '''def merge_sort(arr):
+    """Sort array using merge sort"""
+    if len(arr) <= 1:
+        return arr
+    mid = len(arr) // 2
+    left = merge_sort(arr[:mid])
+    right = merge_sort(arr[mid:])
+    
+    result = []
+    i = j = 0
+    while i < len(left) and j < len(right):
+        if left[i] < right[j]:
+            result.append(left[i])
+            i += 1
+        else:
+            result.append(right[j])
+            j += 1
+    
+    return result
+
+# Test
+print(merge_sort([5, 2, 8, 1, 9]))''',
+            "known_issues": [
+                {"type": "logic", "severity": "high", "description": "Missing code to add remaining elements from left/right", "line_range": [18, 18]}
+            ],
+            "test_cases": [
+                {"input": [5, 2, 8, 1, 9], "expected": [1, 2, 5, 8, 9]},
+                {"input": [3, 1, 2], "expected": [1, 2, 3]},
+                {"input": [1], "expected": [1]}
+            ]
+        },
+        {
+            "title": "Fibonacci Bug",
+            "description": "This fibonacci function has incorrect base cases.",
+            "difficulty": "medium",
+            "buggy_code_python": '''def fibonacci(n):
+    """Calculate nth fibonacci number"""
+    if n <= 1:  
+        return 1
+    return fibonacci(n-1) + fibonacci(n-2)
+
+# Test
+print(fibonacci(5))  # Should be 5 (0,1,1,2,3,5)
+print(fibonacci(0))  # Should be 0''',
+            "known_issues": [
+                {"type": "logic", "severity": "high", "description": "Returns 1 for n=0, should return 0", "line_range": [3, 4]}
+            ],
+            "test_cases": [
+                {"input": 5, "expected": 5},
+                {"input": 0, "expected": 0},
+                {"input": 1, "expected": 1}
+            ]
+        },
+
+        # HARD (5 problems)
+        {
+            "title": "LRU Cache Bug",
+            "description": "This LRU cache has a subtle bug in the eviction logic.",
+            "difficulty": "hard",
+            "buggy_code_python": '''class LRUCache:
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.cache = {}
+        self.order = []
+    
+    def get(self, key):
+        if key in self.cache:
+            self.order.remove(key)
+            self.order.append(key)
+            return self.cache[key]
+        return -1
+    
+    def put(self, key, value):
+        if key in self.cache:
+            self.order.remove(key)
+        elif len(self.cache) >= self.capacity:
+            oldest = self.order.pop(0)  
+            del self.cache[oldest]
+        self.cache[key] = value
+        self.order.append(key)
+
+# Test
+cache = LRUCache(2)
+cache.put(1, 1)
+cache.put(2, 2)
+print(cache.get(1))''',
+            "known_issues": [
+                {"type": "logic", "severity": "medium", "description": "Order of operations in put() can cause issues", "line_range": [17, 19]}
+            ],
+            "test_cases": [
+                {"input": {"operations": ["put", "put", "get"], "args": [[1,1], [2,2], [1]]}, "expected": 1}
+            ]
+        },
+        {
+            "title": "Deadlock Risk",
+            "description": "This code has a potential deadlock when acquiring multiple locks.",
+            "difficulty": "hard",
+            "buggy_code_python": '''import threading
+
+class BankAccount:
+    def __init__(self, balance):
+        self.balance = balance
+        self.lock = threading.Lock()
+    
+    def transfer(self, other, amount):
+       
+        self.lock.acquire()
+        other.lock.acquire()
+        
+        if self.balance >= amount:
+            self.balance -= amount
+            other.balance += amount
+        
+        self.lock.release()
+        other.lock.release()
+
+# Test
+acc1 = BankAccount(100)
+acc2 = BankAccount(50)
+acc1.transfer(acc2, 30)
+print(acc1.balance, acc2.balance)''',
+            "known_issues": [
+                {"type": "concurrency", "severity": "high", "description": "Lock ordering can cause deadlock", "line_range": [9, 10]}
+            ],
+            "test_cases": [
+                {"input": {"initial": [100, 50], "transfer": 30}, "expected": [70, 80]}
+            ]
+        },
+        {
+            "title": "Memory Leak in Generator",
+            "description": "This generator has a memory leak due to circular reference.",
+            "difficulty": "hard",
+            "buggy_code_python": '''class DataProcessor:
+    def __init__(self):
+        self.data = []
+        self.processor = self.process_data()  
+    
+    def process_data(self):
+        while True:
+            if self.data:
+                item = self.data.pop(0)
+                yield item * 2
+
+# Test
+processor = DataProcessor()
+processor.data = [1, 2, 3]
+print(list(processor.processor))''',
+            "known_issues": [
+                {"type": "memory", "severity": "high", "description": "Circular reference prevents garbage collection", "line_range": [4, 4]}
+            ],
+            "test_cases": [
+                {"input": [1, 2, 3], "expected": [2, 4, 6]}
+            ]
+        },
+        {
+            "title": "SQL Injection Vulnerability",
+            "description": "This database query is vulnerable to SQL injection.",
+            "difficulty": "hard",
+            "buggy_code_python": '''def get_user(username):
+    """Fetch user from database"""
+    
+    query = f"SELECT * FROM users WHERE username = '{username}'"
+    # Imagine this executes on a database
+    return query
+
+# Test
+print(get_user("admin"))
+print(get_user("admin' OR '1'='1"))  # SQL injection!''',
+            "known_issues": [
+                {"type": "security", "severity": "critical", "description": "Use parameterized queries instead of f-strings", "line_range": [4, 4]}
+            ],
+            "test_cases": [
+                {"input": "admin", "expected": "SELECT * FROM users WHERE username = 'admin'"}
+            ]
+        },
+        {
+            "title": "Race Condition in Counter",
+            "description": "This shared counter has a race condition.",
+            "difficulty": "hard",
+            "buggy_code_python": '''import threading
+
+class Counter:
+    def __init__(self):
+        self.count = 0
+    
+    def increment(self):
+       
+        temp = self.count
+        temp += 1
+        self.count = temp
+
+# Test
+counter = Counter()
+for _ in range(100):
+    counter.increment()
+print(counter.count)  # Should be 100''',
+            "known_issues": [
+                {"type": "concurrency", "severity": "high", "description": "Read-modify-write is not atomic", "line_range": [8, 10]}
+            ],
+            "test_cases": [
+                {"input": 100, "expected": 100}
+            ]
+        },
+
+        # Add 5 more similar problems to reach 20 total
+        {
+            "title": "Debug Challenge 16",
+            "description": "Find and fix the bug in this sorting algorithm.",
+            "difficulty": "medium",
+            "buggy_code_python": '''def bubble_sort(arr):
+    n = len(arr)
+    for i in range(n):
+        for j in range(n-1):  
+            if arr[j] > arr[j+1]:
+                arr[j], arr[j+1] = arr[j+1], arr[j]
+    return arr
+
+print(bubble_sort([5, 2, 8, 1]))''',
+            "known_issues": [
+                {"type": "efficiency", "severity": "medium", "description": "Inner loop doesn't account for sorted elements", "line_range": [4, 4]}
+            ],
+            "test_cases": [
+                {"input": [5, 2, 8, 1], "expected": [1, 2, 5, 8]}
+            ]
+        },
+        {
+            "title": "Debug Challenge 17",
+            "description": "This function removes duplicates but loses order.",
+            "difficulty": "easy",
+            "buggy_code_python": '''def remove_duplicates(arr):
+    return list(set(arr))  
+
+print(remove_duplicates([3, 1, 2, 1, 3, 4]))''',
+            "known_issues": [
+                {"type": "logic", "severity": "medium", "description": "Using set() loses original order", "line_range": [2, 2]}
+            ],
+            "test_cases": [
+                {"input": [3, 1, 2, 1, 3, 4], "expected": [3, 1, 2, 4]}
+            ]
+        },
+        {
+            "title": "Debug Challenge 18",
+            "description": "Matrix multiplication has wrong dimensions.",
+            "difficulty": "medium",
+            "buggy_code_python": '''def matrix_multiply(A, B):
+    result = []
+    for i in range(len(A)):
+        row = []
+        for j in range(len(B)):  
+            row.append(sum(A[i][k] * B[k][j] for k in range(len(B))))
+        result.append(row)
+    return result
+
+print(matrix_multiply([[1, 2], [3, 4]], [[5, 6], [7, 8]]))''',
+            "known_issues": [
+                {"type": "logic", "severity": "high", "description": "Wrong dimension for columns", "line_range": [5, 5]}
+            ],
+            "test_cases": [
+                {"input": {"A": [[1, 2], [3, 4]], "B": [[5, 6], [7, 8]]}, "expected": [[19, 22], [43, 50]]}
+            ]
+        },
+        {
+            "title": "Debug Challenge 19",
+            "description": "This linked list reversal has a memory leak.",
+            "difficulty": "hard",
+            "buggy_code_python": '''class Node:
+    def __init__(self, val):
+        self.val = val
+        self.next = None
+
+def reverse_list(head):
+    prev = None
+    current = head
+    while current:
+        next_node = current.next
+        current.next = prev
+        prev = current
+        
+    return prev
+
+# Test with simple case
+node1 = Node(1)
+node2 = Node(2)
+node1.next = node2
+print(reverse_list(node1))''',
+            "known_issues": [
+                {"type": "logic", "severity": "critical", "description": "Infinite loop - forgot current = next_node", "line_range": [13, 13]}
+            ],
+            "test_cases": [
+                {"input": [1, 2, 3], "expected": [3, 2, 1]}
+            ]
+        },
+        {
+            "title": "Debug Challenge 20",
+            "description": "Password validator has weak security.",
+            "difficulty": "medium",
+            "buggy_code_python": '''def is_strong_password(password):
+
+    if len(password) >= 6:  
+        return True
+    return False
+
+print(is_strong_password("abc123"))  # Should be False''',
+            "known_issues": [
+                {"type": "security", "severity": "high", "description": "Needs length >= 8, uppercase, lowercase, digits", "line_range": [3, 4]}
+            ],
+            "test_cases": [
+                {"input": "abc123", "expected": False},
+                {"input": "Abc12345", "expected": True}
+            ]
+        }
+    ]
     
     for p in problems:
         db.add(models.AuditProblem(**p))
     db.commit()
-    print(f" Seeded {len(problems)} audit problems")
+    print(f"Seeded {len(problems)} audit problems")
 
 def main():
     db = SessionLocal()

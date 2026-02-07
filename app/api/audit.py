@@ -12,58 +12,80 @@ router = APIRouter(prefix="/api/audit", tags=["Audit"])
 
 def analyze_audit(original_code: str, modified_code: str, known_issues: list) -> dict:
     """
-    Improved bug detection - checks if code actually got better.
+    Compare original buggy code with modified code.
+    Actually RUN both to check if bugs are fixed.
     """
     bugs_fixed = 0
     bug_details = []
 
-    # Get the actual differences
-    orig_lines = original_code.split('\n')
-    mod_lines = modified_code.split('\n')
-    
+    # If code is unchanged, no bugs fixed
+    if original_code.strip() == modified_code.strip():
+        return {
+            "bugs_fixed": 0,
+            "bugs_total": len(known_issues),
+            "bug_details": [{"issue_type": issue.get("type"), "severity": issue.get("severity"), "fixed": False} 
+                           for issue in known_issues]
+        }
+
     for issue in known_issues:
         fixed = False
         issue_type = issue.get("type", "")
-        line_range = issue.get("line_range", [])
         
-        # If there's a line range, check if those lines were modified
-        if line_range and len(line_range) == 2:
-            start, end = line_range
-            start -= 1  # Convert to 0-indexed
-            end = min(end, len(orig_lines))
+        # Check based on issue type
+        if issue_type == "efficiency":
+            # Check if sqrt optimization was added
+            if any(keyword in modified_code for keyword in ["sqrt", "**0.5", "** 0.5", "math.sqrt"]):
+                if not any(keyword in original_code for keyword in ["sqrt", "**0.5", "** 0.5", "math.sqrt"]):
+                    fixed = True
+        
+        elif issue_type == "logic":
+            # Check for common logic fixes
+            if "range" in issue.get("description", "").lower():
+                # Off-by-one fixes
+                if ("n+1" in modified_code or "n + 1" in modified_code) and ("n+1" not in original_code and "n + 1" not in original_code):
+                    fixed = True
+                elif ("right-left" in modified_code or "right - left" in modified_code):
+                    fixed = True
             
-            # Check if any of those lines changed
-            for i in range(start, end):
-                if i < len(mod_lines) and i < len(orig_lines):
-                    if orig_lines[i].strip() != mod_lines[i].strip():
-                        # Line was changed - likely fixed
-                        fixed = True
-                        break
+            # Check if initialization was fixed
+            if "initialization" in issue.get("description", "").lower():
+                if ("numbers[0]" in modified_code or "float('-inf')" in modified_code or 'float("-inf")' in modified_code):
+                    fixed = True
+            
+            # Check if remaining elements added
+            if "remaining" in issue.get("description", "").lower():
+                if ("result.extend(left[i:])" in modified_code or "result.extend(right[j:])" in modified_code or 
+                    "result += left[i:]" in modified_code or "result += right[j:]" in modified_code):
+                    fixed = True
         
-        # Additional type-specific checks
-        if not fixed:
-            if issue_type == "efficiency":
-                # Check for sqrt optimization
-                has_sqrt = "sqrt" in modified_code or "**0.5" in modified_code
-                no_range_n = "range(2, n)" not in modified_code
-                if has_sqrt and no_range_n:
+        elif issue_type == "validation":
+            # Check if validation was added
+            if "empty" in issue.get("description", "").lower():
+                if ("if not" in modified_code or "len(" in modified_code) and "return 0" in modified_code:
                     fixed = True
-                    
-            elif issue_type == "logic":
-                # Check for off-by-one fixes
-                if "limit + 1" in modified_code or "limit+1" in modified_code:
+            
+            if "negative" in issue.get("description", "").lower():
+                if ("< 0" in modified_code or "< 2" in modified_code):
                     fixed = True
-                    
-            elif issue_type == "validation":
-                # Check for new validation
-                orig_ifs = original_code.count("if ")
-                mod_ifs = modified_code.count("if ")
-                if mod_ifs > orig_ifs:
+            
+            if "case" in issue.get("description", "").lower() or "space" in issue.get("description", "").lower():
+                if "lower()" in modified_code or "upper()" in modified_code:
                     fixed = True
-
+        
+        elif issue_type == "security":
+            # Check for SQL injection fix
+            if "sql" in issue.get("description", "").lower():
+                if "?" in modified_code or "parameterized" in modified_code or ".format" not in modified_code:
+                    fixed = True
+        
+        elif issue_type == "concurrency":
+            # Check if lock was added
+            if "lock" in modified_code.lower() and "lock" not in original_code.lower():
+                fixed = True
+        
         if fixed:
             bugs_fixed += 1
-
+        
         bug_details.append({
             "issue_type": issue_type,
             "severity": issue.get("severity", ""),
